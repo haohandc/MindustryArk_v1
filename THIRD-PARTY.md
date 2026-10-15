@@ -4,7 +4,13 @@ What this project redistributes, and under what terms.
 
 Each licence below was **read from the upstream repository's own licence file**,
 not from memory. Source and date are recorded so the claim can be re-checked.
-Retrieved 2026-09-20.
+Retrieved 2026-09-20; the Arc entry re-checked 2026-10-13.
+
+The licence texts themselves ship with the app, in
+`entry/src/main/resources/rawfile/licenses/` — and in the payload zip under
+`licenses/`. That directory holds **copies**: when a licence changes, re-copy it
+there. `make_payload_zip.py` fails if the `THIRD-PARTY.md` copy diverges from
+this file.
 
 | Component | Licence | Verified from |
 |---|---|---|
@@ -56,8 +62,9 @@ files vendored inside it:
   Zlib condition 2 requires that altered versions be **plainly marked as such**
   and not misrepresented as the original, so do not describe this tree as plain
   SDL3.
-- Vendored Arc sources referenced by `scripts/` — Apache-2.0, unchanged in
-  licence by being built against.
+- The Arc sources the build compiles against (`ARK_ARC_SRC`) — Apache-2.0,
+  modified by this project; see the Arc section for the changes and how the
+  notice obligation is met. They are not committed to this repository.
 - The LWJGL payload — BSD-3-Clause.
 
 Each keeps its own terms; they merely have to be compatible with GPL-3.0, and
@@ -67,42 +74,83 @@ they are.
 
 ### Mindustry — GPL-3.0
 
-⛔ **This branch does not distribute Mindustry.** The package carries no game; the
-player supplies the `.jar` (see README). So the GPL-3.0 §6 source obligation has
-**no object here** — there is no binary of ours to hand Mindustry's source to.
+A build redistributes an upstream release jar as
+`entry/libs/arm64-v8a/game/mindustry.so` — the `.so` name is a packaging
+requirement, not a modification (see README).
 
-⚠️ That is a statement about **this branch only**. The upstream branch
-([`master`](https://github.com/haohandc/MindustryArk)) *does* ship an upstream
-release jar as `entry/libs/arm64-v8a/game/mindustry.so`, and the per-file account
-of what is and is not modified in it lives there. Read that one before making a
-licensing claim about a build that ships the game.
+**The shipped jar is the upstream release, byte for byte.** Since 2026-09-29 the
+build no longer writes anything into it: `scripts/patch_mindustry.py` only
+*asserts* that `mindustry/desktop/DesktopLauncher.class` and
+`mindustry/Vars.class` are still present, so that a jar that is not what it
+claims to be fails loudly. The SHA-256 pin in `prep_game.py` (checked in
+`verify_hap.py`) identifies exactly which release is shipped.
 
-⚠️ **The licence itself still applies to this branch**, because this is a
-derivative work of Mindustry regardless of what the package contains — hence
-GPL-3.0 on the whole repository. What is absent is only the *distribution* half.
+**Our Arc changes ship beside that jar, not inside it.** They are packed into a
+separate jar — `entry/libs/arm64-v8a/patchjar/arcpatch.so` — that the launcher
+puts first on `-Djava.class.path`. JVM class resolution takes the first match, so
+the patch jar's classes win over the upstream classes of the same name still
+present in the game jar. That jar is a build of **Arc**, not of Mindustry, so it
+is covered by the Arc section below, not by this one.
 
-**Source obligation of this branch.** One item, and it is ours: **this project's
-own source**, which is why this repository exists and is published under GPL-3.0.
-The build scripts are part of it — they are what produce the artifact.
+**Source obligation.** GPL-3.0 requires the corresponding source to be available
+to anyone who receives the binary. Two things satisfy it:
+
+- **This project's own source**, which is why this repository exists and is
+  published under GPL-3.0. The build scripts are part of it — they are what
+  produce the artifact.
+- **Mindustry's source** — upstream, at <https://github.com/Anuken/Mindustry>.
+  The game code redistributed here is unmodified, so pointing at upstream is
+  sufficient and no fork is needed.
 
 Keep the licence text with any redistribution.
 
 ### Arc — Apache-2.0
 
-**Arc's source is modified by this project.** `scripts/build_arc_patch.py`
-recompiles three classes from patched sources and `scripts/patch_mindustry.py`
-writes them into the jar:
+**Arc's source is modified by this project, and the modified classes are what
+ship** — compiled into the patch jar described above by
+`scripts/build_arc_patch.py` and packed by `scripts/make_patch_jar.py`. The
+compiled classes are what a recipient gets, so the notices required below live
+on the sources and are recorded here.
 
-| Class | What was changed |
+Nine upstream files are modified and three are added:
+
+| File | Change |
 |---|---|
-| `arc/backend/sdl/SdlApplication.java` | GL context profile and mobile-mode flag read from system properties |
-| `arc/backend/sdl/SdlInput.java` | Touch pointer handling: finger events, per-pointer state |
+| `arc/backend/sdl/SdlApplication.java` | GL context profile and the mobile-mode flag read from system properties; SDL is told the app entered through `SDL_main` |
+| `arc/backend/sdl/SdlConfig.java` | `forcedGLVersion` (`-Darc.sdl.glVersion`), so the GL version is requested before the window is created |
+| `arc/backend/sdl/SdlInput.java` | Touch pointer handling — finger events, per-pointer state |
 | `arc/backend/sdl/SdlFiles.java` | File-browser root separated from the game data path |
+| `arc/backend/sdl/SdlGraphics.java` | Select the GL dispatch-table fix, and fall back to a full rebuild when the minimal one is not enough |
+| `arc/backend/sdl/SdlGL20.java` | GLES path: `glClearDepth`→`glClearDepthf`, `glDepthRange`→`glDepthRangef`, plus optional call tracing |
+| `arc/backend/sdl/SdlGL30.java` | GLES path: `glGetBufferParameteri64`→`...i64v`, `glGetSamplerParameterIiv`→`...iv` |
+| `arc/graphics/gl/GLVersion.java` | Read the GLES/desktop flavour out of the version string |
+| `arc/graphics/gl/Shader.java` | Pick the GLSL version from the GL flavour, not the application type; explicit precision qualifier on GLES |
+| `arc/backend/sdl/GLBootstrap.java` *(new)* | Rebuild LWJGL's GL function-pointer table on a non-desktop context |
+| `arc/backend/sdl/GLDispatchFix.java` *(new)* | Minimal `FunctionProvider` wrapper that lets LWJGL fill the table itself |
+| `arc/backend/sdl/GLDiag.java` *(new)* | Read-only probe that reports what the dispatch table is missing |
 
-Apache-2.0 §4(b) requires modified files to carry prominent notices stating that
-they were changed, and §4(a)/(c) require the licence and attribution notices to
-be retained. The patch scripts are what actually produce those files, so the
-provenance is reproducible even though the compiled classes are what ship.
+Apache-2.0 §4 obligations, and where each is met:
+
+- **§4(b) — notices on modified files.** Every modified and added source file
+  carries a header notice stating that it was changed and when (added
+  2026-10-13). The table above is the change record.
+- **§4(a) — a copy of the licence.** The Apache-2.0 text ships with the app at
+  `entry/src/main/resources/rawfile/licenses/Apache-2.0.txt`, and in the payload
+  zip under `licenses/`.
+- **§4(c) — retain attribution.** Upstream's copyright headers are left in place;
+  Arc is credited in the README.
+- **§4(d) — NOTICE file.** Not applicable: upstream Arc has no `NOTICE` file.
+
+Apache-2.0 lets this project distribute the modified classes; it does not require
+the modified Arc *source* to be published — only the notices and the licence. The
+modified sources live in the Arc checkout the build reads (`ARK_ARC_SRC`), which
+is not committed here; the licence and this change record are what travel with
+the artifact.
+
+**This section does not apply to `Ark Launcher`.** That package is built in the
+`tools` form (`scripts/make_store_app.sh tools`), which removes the whole
+`entry/libs/arm64-v8a/` tree — no game jar, no patch jar, no JDK — so it carries
+none of the code discussed here.
 
 ### SDL3 — Zlib
 
@@ -119,7 +167,32 @@ The modifications are confined to the OpenHarmony backend directories.
 
 The embedded runtime is redistributed. The Classpath Exception is what permits
 linking and shipping it alongside a work under other terms; without it this
-project's combination would be a GPL-2.0 work as a whole.
+project's combination would be a GPL-2.0 work as a whole. The GPL-2.0 text,
+including the Classpath Exception section, ships with the app at
+`entry/src/main/resources/rawfile/licenses/OpenJDK-GPLv2-CE.txt`.
+
+The runtime is a prebuilt OpenJDK 21 build for OpenHarmony (musl / aarch64),
+taken as-is rather than compiled here. Precisely: it is the build AMCL publishes
+as `jdk21-ohos-full-v7.zip` (release `v21.0.5-ohos-7` of
+<https://github.com/LZZLHY/mc-ohos-resources>, sha256 `21556d0d…`), which
+corresponds to upstream `jdk-21.0.5+11`
+(<https://github.com/openjdk/jdk>, commit `dfcd8d2eecfe62e91070244d8eb10906dc3c812d`)
+with AMCL's OpenHarmony patches. Every JDK file this project ships was verified
+byte-for-byte against that asset; the only difference is the 14 bytes in
+`libjvm.so` described below.
+
+**OpenJDK is also modified by this project, and the modified binary is what
+ships.** `scripts/prep_vendor.py` calls `scripts/patch_libjvm.py`, which rewrites
+`libjvm.so` in place, 7 bytes for 7 bytes: the module image's name `modules`
+becomes `jimg.so` in two path format strings. Nothing else in the library is
+touched — the `DT_SONAME` is left intact, exactly as the JDK ships it. The result
+ships as `jdk21/lib/server/libjvm_real.so` and `verify_hap.py` asserts the patch
+is present. GPL-2.0 §2 requires a notice stating the file was changed and when;
+§3 requires the corresponding source of the modified binary to be available —
+that is upstream OpenJDK (<https://github.com/openjdk/jdk>) plus
+`scripts/patch_libjvm.py`, which is the entire change. The other JDK files that
+ship (`jimg.so`, `tzdb.so`, and the `conf/` and `lib/security/` trees) are
+renamed or copied, not modified.
 
 Note that this is GPL **v2**, unlike Mindustry's v3 — two different GPL versions
 are involved here, and they are not interchangeable.
@@ -156,7 +229,8 @@ a clone would. `RELEASE.md` covers what may be published at all.
   <https://github.com/Anuken/Arc>
 - SDL3 — <https://github.com/libsdl-org/SDL>
 - LWJGL — <https://www.lwjgl.org/>
-- OpenJDK — <https://openjdk.org/>
+- OpenJDK — <https://openjdk.org/>; the OpenHarmony build redistributed here is
+  published by **AMCL** — <https://github.com/LZZLHY/amcl>
 
 ## This project is unofficial
 

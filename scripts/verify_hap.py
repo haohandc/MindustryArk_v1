@@ -480,7 +480,7 @@ def main():
         # prep_game.py 里的说明。2026-09-28 更改；它曾固定的是我们多阶段的变体。
         # ⭐ SHA-256（与 prep_game.py 的 SRC_SHA256 【必须】同值；两处跨文件重复，
         #    只改一处 = 一条闸门静默失效）。换算法的理由见 prep_game.py。
-        WANT_GAME = "c2fd5a5dcb8d306525bb47ff28121237d4d25f53868562946491f2ef261dc272"
+        WANT_GAME = "36d94941a1639478ad1d9be25a9d802c6f77552f400c6da0338b7b019f63a0d1"
         game_ok = False
         with zipfile.ZipFile(hap) as z:
             if GAME_ENTRY not in z.namelist():

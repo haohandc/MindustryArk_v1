@@ -70,14 +70,13 @@ PROJECT_ROOT = config.PROJECT_ROOT
 # 产生一个只有这个常量才能注意到的不同 jar。
 SRC = config.UPSTREAM_JAR
 
-# Mindustry v8 Build 160.5，官方桌面发布版。它的 version.properties
-# 写着 build=160.5, modifier=release, type=official。
+# Mindustry v8 Build 160.7，官方桌面发布版。
 #
 # ⭐ 2026-10-09：SHA-1 → SHA-256。理由不是强度，是**便利**：上游 GitHub Release
 #    的 asset 自带 `digest: "sha256:…"`，换版本时可以直接和它对，不必自己先算一遍。
-#    【实测已核对】本地这份的 sha256 与 Anuken/Mindustry v160.5 那条 asset 的
-#    digest 完全一致（size 88902250 也一致）⇒ 它就是官方原版。
-SRC_SHA256 = "c2fd5a5dcb8d306525bb47ff28121237d4d25f53868562946491f2ef261dc272"
+#    【实测已核对】这份与 Anuken/Mindustry v160.7 那条 asset 的 digest 一致
+#    （88677884 字节）。上一个版本 160.5 是 c2fd5a5d…（88902250）。
+SRC_SHA256 = "36d94941a1639478ad1d9be25a9d802c6f77552f400c6da0338b7b019f63a0d1"
 
 DEST = os.path.join(PROJECT_ROOT,
                     "entry", "libs", "arm64-v8a", "game", "mindustry.so")
